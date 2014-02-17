@@ -109,6 +109,8 @@ static void config_channel(volatile uint8_t *tccra,
     *tccra = masked_tccr | ((1 << com1) | (0 << com0)); /* non inverting mode */
   else if (mode == PWM_OUTPUT_ACTIVE_LOW)
     *tccra = masked_tccr | (1 << com1) | (1 << com0);   /* inverting mode */
+  else
+    *tccra = masked_tccr;
 }
 
 static uint8_t timer_index(PWMDriver *pwmp)
