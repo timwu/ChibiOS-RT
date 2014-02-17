@@ -39,12 +39,10 @@
 typedef struct {
   volatile uint8_t *tccra;
   volatile uint8_t *tccrb;
-  volatile uint8_t *ocrah;
-  volatile uint8_t *ocral;
-  volatile uint8_t *ocrbh;
-  volatile uint8_t *ocrbl;
-  volatile uint8_t *ocrch;
-  volatile uint8_t *ocrcl;
+  volatile uint16_t *ocra;
+  volatile uint16_t *ocrb;
+  volatile uint16_t *ocrc;
+  volatile uint16_t *icr;
   volatile uint8_t *tifr;
   volatile uint8_t *timsk;
 } timer_registers_t;
@@ -53,22 +51,22 @@ static timer_registers_t regs_table[]=
 {
 #if AVR_PWM_USE_TIM1 || defined(__DOXYGEN__)
 #if defined(OCR1C)
-  {&TCCR1A, &TCCR1B, &OCR1AH, &OCR1AL, &OCR1BH, &OCR1BL, &OCR1CH, &OCR1CL, &TIFR1, &TIMSK1},
+  {&TCCR1A, &TCCR1B, &OCR1A, &OCR1B, &OCR1C, &ICR1, &TIFR1, &TIMSK1},
 #else
-  {&TCCR1A, &TCCR1B, &OCR1AH, &OCR1AL, &OCR1BH, &OCR1BL, NULL, NULL, &TIFR1, &TIMSK1},
+  {&TCCR1A, &TCCR1B, &OCR1A, &OCR1B, NULL, &ICR1, &TIFR1, &TIMSK1},
 #endif
 #endif
 #if AVR_PWM_USE_TIM2 || defined(__DOXYGEN__)
-  {&TCCR2A, &TCCR2B, &OCR2A, &OCR2A, &OCR2B, &OCR2B, NULL, NULL, &TIFR2, &TIMSK2},
+  {&TCCR2A, &TCCR2B, &OCR2A, &OCR2B, NULL, NULL, &ICR2, &TIFR2, &TIMSK2},
 #endif
 #if AVR_PWM_USE_TIM3 || defined(__DOXYGEN__)
-  {&TCCR3A, &TCCR3B, &OCR3AH, &OCR3AL, &OCR3BH, &OCR3BL, &OCR3CH, &OCR3CL, &TIFR3, &TIMSK3},
+  {&TCCR3A, &TCCR3B, &OCR3A, &OCR3B, &OCR3C, &ICR3, &TIFR3, &TIMSK3},
 #endif
 #if AVR_PWM_USE_TIM4 || defined(__DOXYGEN__)
-  {&TCCR4A, &TCCR4B, &OCR4AH, &OCR4AL, &OCR4CH, &OCR4CL, &OCR4CH, &OCR4CL, &TIFR4, &TIMSK4},
+  {&TCCR4A, &TCCR4B, &OCR4A, &OCR4C, &OCR4C, &ICR4, &TIFR4, &TIMSK4},
 #endif
 #if AVR_PWM_USE_TIM5 || defined(__DOXYGEN__)
-  {&TCCR5A, &TCCR5B, &OCR5AH, &OCR5AL, &OCR5BH, &OCR5BL, &OCR5CH, &OCR5CL, &TIFR5, &TIMSK5},
+  {&TCCR5A, &TCCR5B, &OCR5A, &OCR5B, &OCR5C, &ICR5, &TIFR5, &TIMSK5},
 #endif
 };
 
@@ -106,11 +104,11 @@ static void config_channel(volatile uint8_t *tccra,
                            uint8_t com0,
                            pwmmode_t mode)
 {
-  *tccra &= ~((1 << com1) | (1 << com0));
+  uint8_t masked_tccr = (*tccra & ~((1 << com1) | (1 << com0)));
   if (mode == PWM_OUTPUT_ACTIVE_HIGH)
-    *tccra |= ((1 << com1) | (0 << com0)); /* non inverting mode */
+    *tccra = masked_tccr | ((1 << com1) | (0 << com0)); /* non inverting mode */
   else if (mode == PWM_OUTPUT_ACTIVE_LOW)
-    *tccra |= (1 << com1) | (1 << com0);   /* inverting mode */
+    *tccra = masked_tccr | (1 << com1) | (1 << com0);   /* inverting mode */
 }
 
 static uint8_t timer_index(PWMDriver *pwmp)
@@ -136,6 +134,7 @@ static uint8_t timer_index(PWMDriver *pwmp)
   if (pwmp == &PWMD5) return index;
   else index++;
 #endif
+  return index;
 }
 
 /*===========================================================================*/
@@ -302,32 +301,32 @@ void pwm_lld_init(void)
 {
 #if AVR_PWM_USE_TIM1 || defined(__DOXYGEN__)
   pwmObjectInit(&PWMD1);
-  TCCR1A = (1 << WGM11) | (1 << WGM10);
-  TCCR1B = (0 << WGM13) | (1 << WGM12);
+  TCCR1A = (1 << WGM11) | (0 << WGM10);
+  TCCR1B = (1 << WGM13) | (1 << WGM12);
 #endif
 
 #if AVR_PWM_USE_TIM2 || defined(__DOXYGEN__)
   pwmObjectInit(&PWMD2);
-  TCCR2A = (1 << WGM21) | (1 << WGM20);
-  TCCR2B = (0 << WGM22);
+  TCCR2A = (1 << WGM21) | (0 << WGM20);
+  TCCR2B = (1 << WGM22) | (1 << WGM22);
 #endif
 
 #if AVR_PWM_USE_TIM3 || defined(__DOXYGEN__)
   pwmObjectInit(&PWMD3);
-  TCCR3A = (1 << WGM31) | (1 << WGM30);
-  TCCR3B = (0 << WGM33) | (1 << WGM32);
+  TCCR3A = (1 << WGM31) | (0 << WGM30);
+  TCCR3B = (1 << WGM33) | (1 << WGM32);
 #endif
 
 #if AVR_PWM_USE_TIM4 || defined(__DOXYGEN__)
   pwmObjectInit(&PWMD4);
-  TCCR4A = (1 << WGM41) | (1 << WGM40);
-  TCCR4B = (0 << WGM43) | (1 << WGM42);
+  TCCR4A = (1 << WGM41) | (0 << WGM40);
+  TCCR4B = (1 << WGM43) | (1 << WGM42);
 #endif
 
 #if AVR_PWM_USE_TIM5 || defined(__DOXYGEN__)
   pwmObjectInit(&PWMD5);
-  TCCR5A = (1 << WGM51) | (1 << WGM50);
-  TCCR5B = (0 << WGM53) | (1 << WGM52);
+  TCCR5A = (1 << WGM51) | (0 << WGM50);
+  TCCR5B = (1 << WGM53) | (1 << WGM52);
 #endif
 }
 
@@ -355,8 +354,11 @@ void pwm_lld_start(PWMDriver *pwmp)
     /* TODO: support other prescaler options */
 
     uint8_t i = timer_index(pwmp);
-    *regs_table[i].tccrb &= ~(1 << CS11);
-    *regs_table[i].tccrb |= (1 << CS12) | (1 << CS10);
+    *regs_table[i].tccrb &= ~((1 << CS12) | (1 << CS11) | (1 << CS10));
+    /* Prescaler hardcoded to 64 for now */
+    *regs_table[i].tccrb |= (0 << CS12) | (1 << CS11) | (1 << CS10);
+    *regs_table[i].icr = ((F_CPU / pwmp->config->frequency) / 64) - 1;
+
     if (pwmp->config->callback != NULL)
     	*regs_table[i].timsk |= (1 << TOIE1);
   }
@@ -414,9 +416,14 @@ void pwm_lld_enable_channel(PWMDriver *pwmp,
                             pwmchannel_t channel,
                             pwmcnt_t width)
 {
-  uint16_t val = width;
-  if (val > MAX_PWM_VALUE)
-    val = MAX_PWM_VALUE;
+  uint8_t i = timer_index(pwmp);
+  uint32_t val = width;
+  val = (val * (*regs_table[i].icr)) / pwmp->config->period;
+  if (val > *regs_table[i].icr) {
+	  val = *regs_table[i].icr;
+  } else if (val < 0) {
+	  val = 0;
+  }
 
 #if AVR_PWM_USE_TIM2 || defined(__DOXYGEN__)
   if (pwmp == &PWMD2) {
@@ -438,27 +445,21 @@ void pwm_lld_enable_channel(PWMDriver *pwmp,
   }
 #endif
 
-  uint8_t i = timer_index(pwmp);
+
   config_channel(regs_table[i].tccra,
                  7 - 2*channel,
                  6 - 2*channel,
                  pwmp->config->channels[channel].mode);
-  volatile uint8_t *ocrh, *ocrl;
   switch (channel) {
   case 1:
-    ocrh = regs_table[i].ocrbh;
-    ocrl = regs_table[i].ocrbl;
+    *regs_table[i].ocrb = val;
     break;
   case 2:
-    ocrh = regs_table[i].ocrch;
-    ocrl = regs_table[i].ocrcl;
+	*regs_table[i].ocrc = val;
     break;
   default:
-    ocrh = regs_table[i].ocrah;
-    ocrl = regs_table[i].ocral;
+    *regs_table[i].ocra = val;
   }
-  *ocrh = val >> 8;
-  *ocrl = val & 0xFF;
   *regs_table[i].tifr |= (1 << (channel + 1));
   if (pwmp->config->channels[channel].callback != NULL)
     *regs_table[i].timsk |= (1 << (channel + 1));
