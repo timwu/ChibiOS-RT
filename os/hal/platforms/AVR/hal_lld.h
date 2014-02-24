@@ -25,6 +25,9 @@
 #ifndef _HAL_LLD_H_
 #define _HAL_LLD_H_
 
+#include <ch.h>
+#include <avr/interrupt.h>
+
 /*===========================================================================*/
 /* Driver constants.                                                         */
 /*===========================================================================*/
@@ -32,7 +35,7 @@
 /**
  * @brief   Defines the support for realtime counters in the HAL.
  */
-#define HAL_IMPLEMENTS_COUNTERS FALSE
+#define HAL_IMPLEMENTS_COUNTERS TRUE
 
 /**
  * @brief   Platform name.
@@ -96,9 +99,25 @@
 /* Driver data structures and types.                                         */
 /*===========================================================================*/
 
+/**
+ * @brief   Type of the realtime free counter value.
+ */
+typedef uint32_t halrtcnt_t;
+
 /*===========================================================================*/
 /* Driver macros.                                                            */
 /*===========================================================================*/
+
+/**
+ * @brief   Realtime counter frequency.
+ * @note    The DWT_CYCCNT register is incremented directly by the system
+ *          clock so this function returns STM32_HCLK.
+ *
+ * @return              The realtime counter frequency of type halclock_t.
+ *
+ * @notapi
+ */
+#define hal_lld_get_counter_frequency()     (F_CPU / AVR_TIMER_PRESCALER)
 
 /*===========================================================================*/
 /* External declarations.                                                    */
@@ -108,6 +127,7 @@
 extern "C" {
 #endif
   void hal_lld_init(void);
+  halrtcnt_t hal_lld_get_counter_value();
 #ifdef __cplusplus
 }
 #endif

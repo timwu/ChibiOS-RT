@@ -33,6 +33,8 @@
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
 
+static volatile halrtcnt_t rtcnt = 0;
+
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
@@ -49,6 +51,7 @@ CH_IRQ_HANDLER(AVR_TIMER_VECT) {
   CH_IRQ_PROLOGUE();
 
   chSysLockFromIsr();
+  rtcnt += AVR_TIMER_COUNTER;
   chSysTimerHandlerI();
   chSysUnlockFromIsr();
 
@@ -99,6 +102,10 @@ void hal_lld_init(void) {
 #else
   #error "Neither TCCR0A nor TCCR0 registers are defined"
 #endif
+}
+
+halrtcnt_t hal_lld_get_counter_value() {
+  return rtcnt + TCNT0;
 }
 
 /** @} */
