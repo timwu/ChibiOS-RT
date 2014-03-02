@@ -165,7 +165,6 @@ void ext_lld_init(void) {
  * @notapi
  */
 void ext_lld_start(EXTDriver *extp) {
-  uint8_t modeTemp = 0;
   if (extp->state == EXT_STOP) {
     /* Enables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
@@ -232,6 +231,12 @@ void ext_lld_stop(EXTDriver *extp) {
     /* Disables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
+#ifdef EICRA
+      EICRA = 0;
+#endif
+#ifdef EICRB
+      EICRB = 0;
+#endif
       EIMSK = 0;
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
