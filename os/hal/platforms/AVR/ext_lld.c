@@ -56,12 +56,15 @@ EXTDriver EXTD1;
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
 
-static volatile uint8_t* control_registers[] = {
-#ifdef EICRA
-    &EICRA,
+static volatile uint8_t* mask_registers[] = {
+#ifdef PCMSK0
+    &PCMSK0,
 #endif
-#ifdef EICRB
-    &EICRB
+#ifdef PCMSK1
+    &PCMSK1,
+#endif
+#ifdef PCMSK2
+    &PCMSK1
 #endif
 };
 
@@ -69,82 +72,198 @@ static volatile uint8_t* control_registers[] = {
 /* Driver local functions.                                                   */
 /*===========================================================================*/
 
-INLINE uint8_t convert_mode_bits(uint32_t mode, uint8_t bit1, uint8_t bit0) {
-  switch (mode & EXT_CH_MODE_EDGES_MASK) {
-    case EXT_CH_MODE_BOTH_EDGES:
-      return _BV(bit0); // 1
-    case EXT_CH_MODE_FALLING_EDGE:
-      return _BV(bit1); // 2
-    case EXT_CH_MODE_RISING_EDGE:
-      return _BV(bit1) | _BV(bit0); // 3
-  }
-  return 0;
-}
-
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
 
-#ifdef INT0
-CH_IRQ_HANDLER(INT0_vect) {
+#ifdef PCINT0
+CH_IRQ_HANDLER(PCINT0_vect) {
   CH_IRQ_PROLOGUE();
   get_cb(&EXTD1, 0)(&EXTD1, 0);
   CH_IRQ_EPILOGUE();
 }
 #endif
 
-#ifdef INT1
-CH_IRQ_HANDLER(INT1_vect) {
+#ifdef PCINT1
+CH_IRQ_HANDLER(PCINT1_vect) {
   CH_IRQ_PROLOGUE();
   get_cb(&EXTD1, 1)(&EXTD1, 1);
   CH_IRQ_EPILOGUE();
 }
 #endif
 
-#ifdef INT2
-CH_IRQ_HANDLER(INT2_vect) {
+#ifdef PCINT2
+CH_IRQ_HANDLER(PCINT2_vect) {
   CH_IRQ_PROLOGUE();
   get_cb(&EXTD1, 2)(&EXTD1, 2);
   CH_IRQ_EPILOGUE();
 }
 #endif
 
-#ifdef INT3
-CH_IRQ_HANDLER(INT3_vect) {
+#ifdef PCINT3
+CH_IRQ_HANDLER(PCINT3_vect) {
   CH_IRQ_PROLOGUE();
   get_cb(&EXTD1, 3)(&EXTD1, 3);
   CH_IRQ_EPILOGUE();
 }
 #endif
 
-#ifdef INT4
-CH_IRQ_HANDLER(INT4_vect) {
+#ifdef PCINT4
+CH_IRQ_HANDLER(PCINT4_vect) {
   CH_IRQ_PROLOGUE();
   get_cb(&EXTD1, 4)(&EXTD1, 4);
   CH_IRQ_EPILOGUE();
 }
 #endif
 
-#ifdef INT5
-CH_IRQ_HANDLER(INT5_vect) {
+#ifdef PCINT5
+CH_IRQ_HANDLER(PCINT5_vect) {
   CH_IRQ_PROLOGUE();
   get_cb(&EXTD1, 5)(&EXTD1, 5);
   CH_IRQ_EPILOGUE();
 }
 #endif
 
-#ifdef INT6
-CH_IRQ_HANDLER(INT6_vect) {
+#ifdef PCINT6
+CH_IRQ_HANDLER(PCINT6_vect) {
   CH_IRQ_PROLOGUE();
   get_cb(&EXTD1, 6)(&EXTD1, 6);
   CH_IRQ_EPILOGUE();
 }
 #endif
 
-#ifdef INT7
-CH_IRQ_HANDLER(INT7_vect) {
+#ifdef PCINT7
+CH_IRQ_HANDLER(PCINT7_vect) {
   CH_IRQ_PROLOGUE();
   get_cb(&EXTD1, 7)(&EXTD1, 7);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT8
+CH_IRQ_HANDLER(PCINT8_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 8)(&EXTD1, 8);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT9
+CH_IRQ_HANDLER(PCINT9_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 9)(&EXTD1, 9);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT10
+CH_IRQ_HANDLER(PCINT10_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 10)(&EXTD1, 10);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT11
+CH_IRQ_HANDLER(PCINT11_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 11)(&EXTD1, 11);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT12
+CH_IRQ_HANDLER(PCINT12_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 12)(&EXTD1, 12);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT13
+CH_IRQ_HANDLER(PCINT13_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 13)(&EXTD1, 13);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT14
+CH_IRQ_HANDLER(PCINT14_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 14)(&EXTD1, 14);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT15
+CH_IRQ_HANDLER(PCINT15_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 15)(&EXTD1, 15);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT16
+CH_IRQ_HANDLER(PCINT16_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 16)(&EXTD1, 16);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT17
+CH_IRQ_HANDLER(PCINT17_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 17)(&EXTD1, 17);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT18
+CH_IRQ_HANDLER(PCINT18_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 18)(&EXTD1, 18);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT19
+CH_IRQ_HANDLER(PCINT19_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 19)(&EXTD1, 19);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT20
+CH_IRQ_HANDLER(PCINT20_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 20)(&EXTD1, 20);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT21
+CH_IRQ_HANDLER(PCINT21_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 21)(&EXTD1, 21);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT22
+CH_IRQ_HANDLER(PCINT22_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 22)(&EXTD1, 22);
+  CH_IRQ_EPILOGUE();
+}
+#endif
+
+#ifdef PCINT23
+CH_IRQ_HANDLER(PCINT23_vect) {
+  CH_IRQ_PROLOGUE();
+  get_cb(&EXTD1, 23)(&EXTD1, 23);
   CH_IRQ_EPILOGUE();
 }
 #endif
@@ -178,6 +297,8 @@ void ext_lld_start(EXTDriver *extp) {
     /* Enables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
+      // TODO: Fix to be automatic
+      PCICR = _BV(PCIE0) | _BV(PCIE1) | _BV(PCIE2);
       uint8_t i = 0;
       for (i = 0; i < EXT_MAX_CHANNELS; i++) {
         if (is_autostart(extp, i)) { ext_lld_channel_enable(extp, i); }
@@ -204,13 +325,7 @@ void ext_lld_stop(EXTDriver *extp) {
     /* Disables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
-#ifdef EICRA
-      EICRA = 0;
-#endif
-#ifdef EICRB
-      EICRB = 0;
-#endif
-      EIMSK = 0;
+      PCICR = 0;
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
   }
@@ -227,11 +342,8 @@ void ext_lld_stop(EXTDriver *extp) {
 void ext_lld_channel_enable(EXTDriver *extp, expchannel_t channel) {
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
-      if (get_cb(extp, channel) != NULL) {
-        uint8_t configBit0 = (channel % 4);
-        *control_registers[channel / 4] &= ~(_BV(configBit0) | _BV(configBit0 + 1));
-        *control_registers[channel / 4]  |= convert_mode_bits(get_mode(extp, channel), configBit0 + 1, configBit0);
-        EIMSK |= _BV(channel);
+      if (get_cb(extp, channel) != NULL && get_mode(extp, channel)) {
+        *mask_registers[channel / 8] |= _BV(channel % 8);
       }
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
@@ -248,9 +360,7 @@ void ext_lld_channel_enable(EXTDriver *extp, expchannel_t channel) {
 void ext_lld_channel_disable(EXTDriver *extp, expchannel_t channel) {
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
-      if (get_cb(extp, channel) != NULL) {
-        EIMSK &= ~(_BV(channel));
-      }
+      *mask_registers[channel / 8] &= ~(_BV(channel % 8));
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
 }

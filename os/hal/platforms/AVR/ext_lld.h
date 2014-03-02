@@ -55,24 +55,23 @@
 /**
  * @brief   Available number of EXT channels.
  */
-#ifdef INT7
+#ifdef PCINT23
+#define EXT_MAX_CHANNELS 24
+#elif defined PCINT15
+#define EXT_MAX_CHANNELS 16
+#elif defined PCINT7
 #define EXT_MAX_CHANNELS 8
-#elif defined INT6
-#define EXT_MAX_CHANNELS 7
-#elif defined INT5
-#define EXT_MAX_CHANNELS 4
-#elif defined INT4
-#define EXT_MAX_CHANNELS 5
-#elif defined INT3
-#define EXT_MAX_CHANNELS 4
-#elif defined INT2
-#define EXT_MAX_CHANNELS 3
-#elif defined INT1
-#define EXT_MAX_CHANNELS 2
-#elif defined INT0
-#define EXT_MAX_CHANNELS 1
 #else
 #error "No INT pins found."
+#endif
+
+// Edge direction detection is not support since we're using pin change interrupts
+#ifdef EXT_CH_MODE_FALLING_EDGE
+#undef EXT_CH_MODE_FALLING_EDGE
+#endif
+
+#ifdef EXT_CH_MODE_RISING_EDGE
+#undef EXT_CH_MODE_RISING_EDGE
 #endif
 
 /*===========================================================================*/
