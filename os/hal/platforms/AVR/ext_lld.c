@@ -326,6 +326,15 @@ void ext_lld_stop(EXTDriver *extp) {
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
       PCICR = 0;
+#ifdef PCMSK0
+      PCMSK0 = 0;
+#endif
+#ifdef PCMSK1
+      PCMSK1 = 0;
+#endif
+#ifdef PCMSK2
+      PCMSK2 = 0;
+#endif
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
   }
