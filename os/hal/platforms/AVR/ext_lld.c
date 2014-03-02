@@ -297,8 +297,15 @@ void ext_lld_start(EXTDriver *extp) {
     /* Enables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
-      // TODO: Fix to be automatic
-      PCICR = _BV(PCIE0) | _BV(PCIE1) | _BV(PCIE2);
+#ifdef PCIE0
+      PCICR |= _BV(PCIE0);
+#endif
+#ifdef PCIE1
+      PCICR |= _BV(PCIE1);
+#endif
+#ifdef PCIE2
+      PCICR |= _BV(PCIE2);
+#endif
       uint8_t i = 0;
       for (i = 0; i < EXT_MAX_CHANNELS; i++) {
         if (is_autostart(extp, i)) { ext_lld_channel_enable(extp, i); }
