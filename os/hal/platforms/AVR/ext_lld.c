@@ -56,6 +56,15 @@ EXTDriver EXTD1;
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
 
+static volatile uint8_t* control_registers[] = {
+#ifdef EICRA
+    &EICRA,
+#endif
+#ifdef EICRB
+    &EICRB
+#endif
+};
+
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
@@ -169,46 +178,10 @@ void ext_lld_start(EXTDriver *extp) {
     /* Enables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
-#ifdef INT0
-      EICRA &= ~(_BV(ISC01) | _BV(ISC00));
-      EICRA |= convert_mode_bits(get_mode(extp, 0), ISC01, ISC00);
-      if (is_autostart(extp, 0)) { ext_lld_channel_enable(extp, 0); }
-#endif
-#ifdef INT1
-      EICRA &= ~(_BV(ISC11) | _BV(ISC10));
-      EICRA |= convert_mode_bits(get_mode(extp, 1), ISC11, ISC10);
-      if (is_autostart(extp, 1)) { ext_lld_channel_enable(extp, 1); }
-#endif
-#ifdef INT2
-      EICRA &= ~(_BV(ISC21) | _BV(ISC20));
-      EICRA |= convert_mode_bits(get_mode(extp, 2), ISC21, ISC20);
-      if (is_autostart(extp, 2)) { ext_lld_channel_enable(extp, 2); }
-#endif
-#ifdef INT3
-      EICRA &= ~(_BV(ISC31) | _BV(ISC30));
-      EICRA |= convert_mode_bits(get_mode(extp, 3), ISC31, ISC30);
-      if (is_autostart(extp, 3)) { ext_lld_channel_enable(extp, 3); }
-#endif
-#ifdef INT4
-      EICRB &= ~(_BV(ISC41) | _BV(ISC40));
-      EICRB |= convert_mode_bits(get_mode(extp, 4), ISC41, ISC40);
-      if (is_autostart(extp, 4)) { ext_lld_channel_enable(extp, 4); }
-#endif
-#ifdef INT5
-      EICRB &= ~(_BV(ISC51) | _BV(ISC50));
-      EICRB |= convert_mode_bits(get_mode(extp, 5), ISC51, ISC50);
-      if (is_autostart(extp, 5)) { ext_lld_channel_enable(extp, 5); }
-#endif
-#ifdef INT6
-      EICRB &= ~(_BV(ISC61) | _BV(ISC60));
-      EICRB |= convert_mode_bits(get_mode(extp, 6), ISC61, ISC60);
-      if (is_autostart(extp, 6)) { ext_lld_channel_enable(extp, 6); }
-#endif
-#ifdef INT7
-      EICRB &= ~(_BV(ISC71) | _BV(ISC70));
-      EICRB |= convert_mode_bits(get_mode(extp, 7), ISC71, ISC70);
-      if (is_autostart(extp, 7)) { ext_lld_channel_enable(extp, 7); }
-#endif
+      uint8_t i = 0;
+      for (i = 0; i < EXT_MAX_CHANNELS; i++) {
+        if (is_autostart(extp, i)) { ext_lld_channel_enable(extp, i); }
+      }
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
   }
@@ -255,6 +228,9 @@ void ext_lld_channel_enable(EXTDriver *extp, expchannel_t channel) {
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
       if (get_cb(extp, channel) != NULL) {
+        uint8_t configBit0 = (channel % 4);
+        *control_registers[channel / 4] &= ~(_BV(configBit0) | _BV(configBit0 + 1));
+        *control_registers[channel / 4]  |= convert_mode_bits(get_mode(extp, channel), configBit0 + 1, configBit0);
         EIMSK |= _BV(channel);
       }
     }
