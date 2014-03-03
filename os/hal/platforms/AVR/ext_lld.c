@@ -31,14 +31,19 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
-#define shift_to_index(i, x) (((x) << i) << i)
+#define CHANNELS_PER_VECTOR 8
+
+#ifdef PCMSK2
+#define N_VECTORS 3
+#elif defined (PCMSK1)
+#define N_VECTORS 2
+#elif defined (PCMSK0)
+#define N_VECTORS 1
+#endif
 
 #define get_channel(driver, channel) ((driver)->config->channels[(channel)])
-
 #define get_cb(driver, channel) (get_channel(driver, channel).cb)
-
 #define get_mode(driver, channel) (get_channel(driver, channel).mode)
-
 #define is_autostart(driver, channel) (get_mode(driver, channel) & EXT_CH_MODE_AUTOSTART)
 
 /*===========================================================================*/
@@ -68,202 +73,106 @@ static volatile uint8_t* mask_registers[] = {
 #endif
 };
 
+typedef struct {
+  volatile uint8_t *port;
+  volatile uint8_t *pin;
+  volatile uint8_t *ddr;
+  uint8_t pad;
+} pin_spec;
+
+static pin_spec pc_int_pins[] = {
+    {&PORTB, &PINB, &DDRB, 0}, // PCINT0
+    {&PORTB, &PINB, &DDRB, 1}, // PCINT1
+    {&PORTB, &PINB, &DDRB, 2}, // PCINT2
+    {&PORTB, &PINB, &DDRB, 3}, // PCINT3
+    {&PORTB, &PINB, &DDRB, 4}, // PCINT4
+    {&PORTB, &PINB, &DDRB, 5}, // PCINT5
+    {&PORTB, &PINB, &DDRB, 6}, // PCINT6
+    {&PORTB, &PINB, &DDRB, 7}, // PCINT7
+#if defined(__AVR_ATmega1280__)
+    {&PORTE, &PINE, &DDRE, 0}, // PCINT8
+    {&PORTJ, &PINJ, &DDRJ, 0}, // PCINT9
+    {&PORTJ, &PINJ, &DDRJ, 1}, // PCINT10
+    {&PORTJ, &PINJ, &DDRJ, 2}, // PCINT11
+    {&PORTJ, &PINJ, &DDRJ, 3}, // PCINT12
+    {&PORTJ, &PINJ, &DDRJ, 4}, // PCINT13
+    {&PORTJ, &PINJ, &DDRJ, 5}, // PCINT14
+    {&PORTJ, &PINJ, &DDRJ, 6}, // PCINT15
+    {&PORTK, &PINK, &DDRK, 0}, // PCINT16
+    {&PORTK, &PINK, &DDRK, 1}, // PCINT17
+    {&PORTK, &PINK, &DDRK, 2}, // PCINT18
+    {&PORTK, &PINK, &DDRK, 3}, // PCINT19
+    {&PORTK, &PINK, &DDRK, 4}, // PCINT20
+    {&PORTK, &PINK, &DDRK, 5}, // PCINT21
+    {&PORTK, &PINK, &DDRK, 6}, // PCINT22
+    {&PORTK, &PINK, &DDRK, 7}, // PCINT23
+#else
+#error "Not a supported MCU"
+#endif
+};
+
+
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
+
+static uint8_t get_current_values(uint8_t interrupt) {
+  if (interrupt == 0) {
+    return PINB;
+#if defined (__AVR_ATmega1280__)
+  } else if (interrupt == 2) {
+    return PINK;
+#endif
+  } else {
+    uint8_t value = 0, channel = 0, int_offset = (interrupt * CHANNELS_PER_VECTOR);
+    for (channel = 0; channel < CHANNELS_PER_VECTOR; channel++) {
+      if (*pc_int_pins[int_offset + channel].pin & _BV(pc_int_pins[int_offset + channel].pad)) {
+        value |= _BV(channel);
+      }
+    }
+    return value;
+  }
+}
+
+static uint8_t handle_interrupt(uint8_t int_vector, uint8_t previous_vals) {
+  uint8_t cur_vals = get_current_values(int_vector);
+  uint8_t changed = (cur_vals ^ previous_vals) & *mask_registers[int_vector];
+  uint8_t channel = 0, channel_offset = int_vector * CHANNELS_PER_VECTOR;
+  for (channel = 0; channel < CHANNELS_PER_VECTOR; channel++) {
+    if (changed & _BV(channel)) {
+      get_cb(&EXTD1, channel + channel_offset)(&EXTD1, channel + channel_offset);
+    }
+  }
+  return cur_vals;
+}
 
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
 
-#ifdef PCINT0
+#ifdef PCINT0_vect
+static volatile uint8_t pin_vals_0 = 0;
 CH_IRQ_HANDLER(PCINT0_vect) {
   CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 0)(&EXTD1, 0);
+  pin_vals_0 = handle_interrupt(0, pin_vals_0);
   CH_IRQ_EPILOGUE();
 }
 #endif
 
-#ifdef PCINT1
+#ifdef PCINT1_vect
+volatile static uint8_t pin_vals_1 = 0;
 CH_IRQ_HANDLER(PCINT1_vect) {
   CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 1)(&EXTD1, 1);
+  pin_vals_1 = handle_interrupt(1, pin_vals_1);
   CH_IRQ_EPILOGUE();
 }
 #endif
 
-#ifdef PCINT2
+#ifdef PCINT2_vect
+volatile static uint8_t pin_vals_2 = 0;
 CH_IRQ_HANDLER(PCINT2_vect) {
   CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 2)(&EXTD1, 2);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT3
-CH_IRQ_HANDLER(PCINT3_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 3)(&EXTD1, 3);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT4
-CH_IRQ_HANDLER(PCINT4_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 4)(&EXTD1, 4);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT5
-CH_IRQ_HANDLER(PCINT5_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 5)(&EXTD1, 5);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT6
-CH_IRQ_HANDLER(PCINT6_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 6)(&EXTD1, 6);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT7
-CH_IRQ_HANDLER(PCINT7_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 7)(&EXTD1, 7);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT8
-CH_IRQ_HANDLER(PCINT8_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 8)(&EXTD1, 8);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT9
-CH_IRQ_HANDLER(PCINT9_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 9)(&EXTD1, 9);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT10
-CH_IRQ_HANDLER(PCINT10_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 10)(&EXTD1, 10);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT11
-CH_IRQ_HANDLER(PCINT11_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 11)(&EXTD1, 11);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT12
-CH_IRQ_HANDLER(PCINT12_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 12)(&EXTD1, 12);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT13
-CH_IRQ_HANDLER(PCINT13_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 13)(&EXTD1, 13);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT14
-CH_IRQ_HANDLER(PCINT14_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 14)(&EXTD1, 14);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT15
-CH_IRQ_HANDLER(PCINT15_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 15)(&EXTD1, 15);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT16
-CH_IRQ_HANDLER(PCINT16_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 16)(&EXTD1, 16);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT17
-CH_IRQ_HANDLER(PCINT17_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 17)(&EXTD1, 17);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT18
-CH_IRQ_HANDLER(PCINT18_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 18)(&EXTD1, 18);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT19
-CH_IRQ_HANDLER(PCINT19_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 19)(&EXTD1, 19);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT20
-CH_IRQ_HANDLER(PCINT20_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 20)(&EXTD1, 20);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT21
-CH_IRQ_HANDLER(PCINT21_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 21)(&EXTD1, 21);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT22
-CH_IRQ_HANDLER(PCINT22_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 22)(&EXTD1, 22);
-  CH_IRQ_EPILOGUE();
-}
-#endif
-
-#ifdef PCINT23
-CH_IRQ_HANDLER(PCINT23_vect) {
-  CH_IRQ_PROLOGUE();
-  get_cb(&EXTD1, 23)(&EXTD1, 23);
+  pin_vals_2 = handle_interrupt(2, pin_vals_2);
   CH_IRQ_EPILOGUE();
 }
 #endif
@@ -297,16 +206,9 @@ void ext_lld_start(EXTDriver *extp) {
     /* Enables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
-#ifdef PCIE0
-      PCICR |= _BV(PCIE0);
-#endif
-#ifdef PCIE1
-      PCICR |= _BV(PCIE1);
-#endif
-#ifdef PCIE2
-      PCICR |= _BV(PCIE2);
-#endif
-      uint8_t i = 0;
+      uint8_t i;
+
+      PCICR = (1 << N_VECTORS) - 1;
       for (i = 0; i < EXT_MAX_CHANNELS; i++) {
         if (is_autostart(extp, i)) { ext_lld_channel_enable(extp, i); }
       }
@@ -332,16 +234,12 @@ void ext_lld_stop(EXTDriver *extp) {
     /* Disables the peripheral.*/
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
+      uint8_t i;
+
       PCICR = 0;
-#ifdef PCMSK0
-      PCMSK0 = 0;
-#endif
-#ifdef PCMSK1
-      PCMSK1 = 0;
-#endif
-#ifdef PCMSK2
-      PCMSK2 = 0;
-#endif
+      for (i = 0; i < N_VECTORS; i++) {
+        *mask_registers[i] = 0;
+      }
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
   }
@@ -359,7 +257,10 @@ void ext_lld_channel_enable(EXTDriver *extp, expchannel_t channel) {
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
       if (get_cb(extp, channel) != NULL && get_mode(extp, channel)) {
-        *mask_registers[channel / 8] |= _BV(channel % 8);
+        *pc_int_pins[channel].ddr &= ~_BV(pc_int_pins[channel].pad);
+        *pc_int_pins[channel].port &= ~_BV(pc_int_pins[channel].pad);
+        // TODO: Read out the pin into the pin_vals_X variable
+        *mask_registers[channel / 8] |= _BV(channel % CHANNELS_PER_VECTOR);
       }
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
@@ -376,7 +277,7 @@ void ext_lld_channel_enable(EXTDriver *extp, expchannel_t channel) {
 void ext_lld_channel_disable(EXTDriver *extp, expchannel_t channel) {
 #if PLATFORM_EXT_USE_EXT1
     if (&EXTD1 == extp) {
-      *mask_registers[channel / 8] &= ~(_BV(channel % 8));
+      *mask_registers[channel / 8] &= ~(_BV(channel % CHANNELS_PER_VECTOR));
     }
 #endif /* PLATFORM_EXT_USE_EXT1 */
 }
