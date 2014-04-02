@@ -69,7 +69,7 @@ static volatile uint8_t* mask_registers[] = {
     &PCMSK1,
 #endif
 #ifdef PCMSK2
-    &PCMSK1
+    &PCMSK2
 #endif
 };
 
