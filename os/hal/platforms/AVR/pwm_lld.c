@@ -63,7 +63,7 @@ static timer_registers_t regs_table[]=
   {&TCCR3A, &TCCR3B, &OCR3A, &OCR3B, &OCR3C, &ICR3, &TIFR3, &TIMSK3},
 #endif
 #if AVR_PWM_USE_TIM4 || defined(__DOXYGEN__)
-  {&TCCR4A, &TCCR4B, &OCR4A, &OCR4C, &OCR4C, &ICR4, &TIFR4, &TIMSK4},
+  {&TCCR4A, &TCCR4B, &OCR4A, &OCR4B, &OCR4C, &ICR4, &TIFR4, &TIMSK4},
 #endif
 #if AVR_PWM_USE_TIM5 || defined(__DOXYGEN__)
   {&TCCR5A, &TCCR5B, &OCR5A, &OCR5B, &OCR5C, &ICR5, &TIFR5, &TIMSK5},
